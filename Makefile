@@ -4,7 +4,7 @@ CODE_DIR = src
 
 .PHONY: all view
 
-all : pdf calculator
+all : calculator pdf
 
 view :
 	evince ContractProgramming.pdf

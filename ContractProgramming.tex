@@ -57,44 +57,70 @@
 \subsection{Calculator source code}
 \begin{frame}[fragile]
 \frametitle{Basic calculator}
-\only<1>{ \lstinputlisting[linerange={13-23}]{"src/calculator.cpp"} }
-\only<2>{ \lstinputlisting[linerange={25-40}]{"src/calculator.cpp"} }
+\only<1>{ \lstinputlisting[linerange={26-36}]{"src/calculator.cpp"} }
+\only<2>{ \lstinputlisting[linerange={38-60}]{"src/calculator.cpp"} }
+\only<3>{ \lstinputlisting[linerange={62-74}]{"src/calculator.cpp"} }
 \end{frame}
 
-\subsection{code with checks}
-\subsection{additional validation}
-\subsection{how much we added?}
-\subsection{can we do better?}
+\subsection{Blender interface}
+\begin{frame}[fragile]
+\frametitle{Blender interface}
+\only<1>{ \lstinputlisting[linerange={26-36}]{"src/Blender.java"} }
+\end{frame}
 
-\section{Let's define contract}
-\subsection{what is a contract?}
+
+\section{DbC Theory}
+\subsection{What is a contract?}
 \begin{frame}
-\frametitle{Contract by Design}
-\framesubtitle{What is it?}
-Contract defines our rights and responsibilities and rights and responsibilities of the other side as well.
-Design by Contract (DBC) is a programming technique invented by Bertrand Meyer.
-It assures that every function implementes a particular behaviour and requires 3 things:
+\frametitle{What is Contract by Design?}
+\setbeamercovered{transparent}
+\uncover<1-2>{A paradigm which was first introduced by Bertrand Meyer, the creator of Eiffel. Although Eiffel has support for programming by contract built into the language, most of the concepts can be used in any language \footnote{http://www.cs.unc.edu/~stotts/COMP204/contract.html}.  \\~\\}
+\uncover<2-2>{Basically programming by contract creates a contract between the software developer and software user - in Meyer's terms the supplier and the consumer.  \\~\\}
 \end{frame}
 
+\subsection{3 assumptions}
 \begin{frame}
-\frametitle{Contract by Design}
-\framesubtitle{3 expectations}
-\only<1-3>{
-\begin{block}{Preconditions}
-Required to call the function. Function should never be called if its preconditions are not satisfied.
-\end{block}}
-
-\only<2-3>{
-\begin{block}{Postconditions}
-Describes the state of the world after the function call.
-\end{block}}
-
-\only<3>{
-\begin{block}{Class Invariants}
-The class guarantees that invariant is always true between function calls. It means that during function call invariant may not be satisfied, but after function execution it must be satisfied.
-\end{block}}
-
+\frametitle{3 assumptions}
+\setbeamercovered{transparent}
+\uncover<1-3>{Every feature, or method, starts with a \textbf{precondition} that must be satisfied by the consumer of the routine. \\~\\}
+\uncover<2-3>{And each feature ends with \textbf{postconditions} which the supplier guarantees to be true (if and only if the preconditions were met). \\~\\}
+\uncover<3-3>{Also, each class has an \textbf{invariant} which must be satisfied after any changes to the object represented by the class. In the other words, the invariant guarantees the object is in a valid state.}
 \end{frame}
+
+\subsection{DbC function template}
+\begin{frame}[fragile]
+\frametitle{DbC function template}
+\begin{lstlisting}[caption=http://www.cs.unc.edu/~stotts/COMP204/contract.html]
+   SomeClass::someFunction ( AnotherClass *fillMeWithData )
+   {
+      // check any preconditions here
+      preCondition ( fillMeWithData );   // non-NULL check
+
+      // do your stuff to add the functionality here
+      ...
+
+      // check post conditions
+      postCondition ( fillMeWithData->hasData() );  -- did we do what we said
+
+      postCondition ( checkInvariant() );  -- class invariant check required 
+                                           -- because of lack of lang support
+   }
+\end{lstlisting}
+\end{frame}
+
+\subsection{Let's implement the mechanism}
+\begin{frame}[fragile]
+\frametitle{Let's implement the mechanism}
+\begin{lstlisting}
+    #define  preCondition(c)     assert(c)
+    #define  postCondition(c)    assert(c)
+\end{lstlisting}
+\begin{lstlisting}
+    #define  preCondition(c)     if(!c) throw exception("preCondition c failed!")
+    #define  postCondition(c)    if(!c) throw exception("Condition c failed!")
+\end{lstlisting}
+\end{frame}
+
 
 
 \subsection{what is our contract}
@@ -115,6 +141,17 @@ The class guarantees that invariant is always true between function calls. It me
 \subsection{Java}
 
 \section{Summary}
+\subsection{Pros}
+\begin{frame}
+\frametitle{Pros}
+\begin{itemize}
+  \item Reduced time spent in debugger
+  \item Less code
+  \item Safer code
+\end{itemize}
+\end{frame}
+
+
 \subsection{Q \& A}
 \begin{frame}
 \frametitle{Q \& A}

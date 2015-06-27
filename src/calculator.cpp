@@ -1,4 +1,9 @@
 #include <iostream>
+#include <stdexcept>
+#include <string>
+#include <assert.h>
+
+#define precondition assert
 
 using namespace std;
 
@@ -10,7 +15,15 @@ enum Operation
     Divide = 3
 };
 
-double calculate(double a, double b, Operation op)
+class DivisionByZeroException : public logic_error
+{
+public:
+    explicit DivisionByZeroException(const string & what_arg) 
+        : logic_error(what_arg)
+    {}
+};
+
+int calculate(int a, int b, Operation op)
 {
     switch(op)
     {
@@ -22,10 +35,62 @@ double calculate(double a, double b, Operation op)
     }
 }
 
+int calculateWithChecks(int a, int b, Operation op)
+{
+    if(a < 0 || b < 0)
+    {
+    	throw out_of_range("Number cannot be negative");
+    }
+    
+    switch(op)
+    {
+        case Add:      return a + b;
+        case Subtract: return a - b;
+        case Multiply: return a * b;
+        case Divide:   if(b != 0.0)
+                       {
+                           return a / b;
+                       }
+                       else
+                       {
+                           throw logic_error("Division by zero");
+                       }
+        default:       throw logic_error("Undefined operation");
+    }
+}
+
+int calculateWithAssertions(int a, int b, Operation op)
+{
+    assert(a >= 0 || b >= 0);
+    switch(op)
+    {
+        case Add:      return a + b;
+        case Subtract: return a - b;
+        case Multiply: return a * b;
+        case Divide:   assert(b != 0.0);
+                       return a / b;
+        default:       throw logic_error("Undefined operation");
+    }
+}
+
+int calculateWithContract(int a, int b, Operation op)
+{
+    precondition(a >= 0 || b >= 0);
+    switch(op)
+    {
+        case Add:      return a + b;
+        case Subtract: return a - b;
+        case Multiply: return a * b;
+        case Divide:   precondition(b != 0.0);
+                       return a / b;
+        default:       throw logic_error("Undefined operation");
+    }
+}
+
 int main()
 {
-    double a = 0;
-    double b = 0;
+    int a = 0;
+    int b = 0;
     int op = 0;
     cout << "a: ";
     cin >> a;
@@ -34,7 +99,7 @@ int main()
     cout << "operation: ";
     cin >> op;
 
-    double result = calculate(a, b, static_cast<Operation>(op));
+    int result = calculateWithContract(a, b, static_cast<Operation>(op));
     cout << result << endl;
     return 0;
 }
