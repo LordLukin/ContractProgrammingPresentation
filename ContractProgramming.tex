@@ -21,7 +21,7 @@
     basicstyle=\ttfamily\scriptsize,
     keywordstyle=\color{blue}\ttfamily,
     stringstyle=\color{red}\ttfamily,
-    commentstyle=\color{green}\ttfamily,
+    commentstyle=\color{green}\ttfamily
 }
 \graphicspath{ {./img/} }
 \DeclareGraphicsExtensions{.pdf,.png,.jpg}
@@ -236,9 +236,12 @@ ensure
     item( key ) = x
     count = old count + 1
 end
+\end{lstlisting}
+\end{frame}
 
-...
-
+\begin{frame}[fragile]
+\frametitle{Eiffel - it started here}
+\begin{lstlisting}[language=Eiffel,caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
 class ACCOUNT
 invariant
     consistent_balance: balance = all_deposits.total
@@ -251,13 +254,24 @@ end\end{lstlisting}
 \frametitle{D - built-in mechanism}
 \begin{lstlisting}[caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
 int add_one( int i )
-in { assert( i > 0 ); }
-out( result ) { assert( result == i + 1 ); }
+in
+{
+    assert( i > 0 );
+}
+out( result )
+{
+    assert( result == i + 1 );
+}
 body
 {
     return i + 1;
 }
+\end{lstlisting}
+\end{frame}
 
+\begin{frame}[fragile]
+\frametitle{D - built-in mechanism}
+\begin{lstlisting}[caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
 class Date
 {
     int day;
@@ -272,20 +286,160 @@ class Date
 \end{frame}
 
 \subsection{Java - iContract}
-\begin{frame}[fragile]
+\begin{frame}
 \frametitle{Java - iContract}
-\begin{lstlisting}
-some java code here
-\end{lstlisting}
+Insert something here
 \end{frame}
 
 \section{iContract - quick overview}
+\begin{frame}[fragile]
+\frametitle{iContract - quick overview}
+\begin{lstlisting}[language=Java]
+/** 
+ * @pre f >= 0.0
+ * @post Math.abs((return * return) - f) < 0.001 
+ */ 
+public float sqrt(float f)
+{
+    ...
+} 
+
+
+/**
+ *  Append an element to a collection.
+ *
+ *  @post c.size() == c@pre.size() + 1
+ *  @post c.contains(o)
+ */
+public void append(Collection c, Object o)
+{
+    ...
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Java - iContract}
+\begin{lstlisting}[language=Java]
+/**
+ *  A PositiveInteger is an Integer that is guaranteed to be positive.
+ *
+ *  @inv intValue() > 0
+ */
+class PositiveInteger extends Integer
+{
+    ...
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Java - iContract: forall \& exists quantifiers}
+\begin{lstlisting}[language=Java,caption=http://www.javaworld.com/article/2074956/learn-java/icontract--design-by-contract-in-java.html]
+/*
+ * @invariant forall IEmployee e in getEmployees() |
+ *              getRooms().contains(e.getOffice())
+ */
+\end{lstlisting}
+\begin{lstlisting}[language=Java]
+/**
+ * @post exists IRoom r in getRooms() | r.isAvailable()
+ */
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Java - iContract: implications and logical operators}
+\begin{lstlisting}[language=Java,caption=http://www.javaworld.com/article/2074956/learn-java/icontract--design-by-contract-in-java.html]
+/**
+ * @invariant getRooms().isEmpty() implies
+ *            getEmployees().isEmpty() // no rooms, no employees
+ */
+\end{lstlisting}
+\begin{lstlisting}[language=Java] 
+/**
+ * @invariant forall IEmployee e1 in getEmployees() |
+ *            forall IEmployee e2 in getEmployees() |
+ *            (e1 != e2) implies e1.getOffice() != e2.getOffice()
+ *            // a single office per employee
+ */
+\end{lstlisting}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Java - iContract: Stack interface example}
+\begin{columns}
+\column{.75\textwidth}
+\begin{lstlisting}[language=Java]
+/**
+ *  @inv !isEmpty() implies top() != null
+ */
+public interface Stack
+{
+    /**
+     *  @pre o != null
+     *  @post !isEmpty()
+     *  @post top() == o
+     */
+    void push(Object o);
+    /**
+     *  @pre !isEmpty()
+     *  @post @return == top()@pre
+     */
+    Object pop();
+    /**
+     *  @pre !isEmpty()
+     */
+    Object top();
+    boolean isEmpty();
+}
+\end{lstlisting}
+\column{.25\textwidth}
+\uncover<2->{Hey man, aren't they a unit tests? \\~\\}
+\uncover<3->{Maybe I can skip them? \\~\\}
+\uncover<4->{Yes, you can! \\~\\}
+\uncover<5->{Seriously? \\~\\}
+\uncover<6->{Seriously, but don't forget to test your contracts.}
+\end{columns}
+\end{frame}
+
+\subsection{iContract - testing contracts}
+\begin{frame}[fragile]
+\frametitle{Java - iContract: testing contract}
+\begin{lstlisting}[language=Java]
+public  class StackTest
+{
+    public static void main(String[] args)
+    {
+        final Stack s = new StackImpl();
+        s.push("one");
+        s.pop();
+        s.push("two");
+        s.push("three");
+        s.pop();
+        s.pop();
+        s.pop();    //  causes an assertion to fail
+    }
+}
+\end{lstlisting}
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+$ java -cp ./instr StackTest
+Exception in thread "main" java.lang.RuntimeException:
+java.lang.RuntimeException: src/StackImpl.java:22: error:
+precondition violated (StackImpl::top()): (/*declared in Stack::top()*/ (!isEmpty()))
+        at StackImpl.top(StackImpl.java:210)
+        at StackImpl.pop(StackImpl.java:124)
+        at StackTest.main(StackTest.java:15)
+\end{lstlisting}
+\end{frame}
+
 \subsection{Preparsing}
 \subsection{Code generation}
 \subsection{example of generated code}
 
 
-\section{Some statistics}
+\section{Some statistics} %maybe skip it?
 \subsection{Code bloat - numbers}
 \subsection{C++ - without, validations, contracts, generated}
 \subsection{Java}
@@ -299,6 +453,7 @@ some java code here
   \item Less code
   \item Safer code
 \end{itemize}
+Before you call the functionality ready, think about contract - preconditions, postconditions and invariants
 \end{frame}
 
 
@@ -313,16 +468,6 @@ some java code here
 
 
 
-\begin{frame}{Przyklad 2 kolumn}
-Coś tam cośżźćł
-\begin{columns}[t] % wyrownanie do gory
-\column{.5\textwidth}
-Tresc pierwszej kolumny
-\column{.5\textwidth}
-% \includegraphics[height=3cm]{rys.png}
-cośisko
-\end{columns}
-\end{frame}
 
 \begin{frame}
 \begin{block}{To jest blok}
