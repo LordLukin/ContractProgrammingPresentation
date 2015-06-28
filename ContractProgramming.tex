@@ -3,7 +3,7 @@
 \usepackage{listings}
 \usepackage{multicol}
 \usepackage{graphicx}
-
+\usepackage{caption}
 
 \usetheme{Frankfurt}
 \usecolortheme{default}
@@ -25,6 +25,9 @@
 }
 \graphicspath{ {./img/} }
 \DeclareGraphicsExtensions{.pdf,.png,.jpg}
+\DeclareCaptionFormat{listing}{\vskip1pt#1#2#3}
+\captionsetup[lstlisting]{format=listing,singlelinecheck=false}
+
 
 
 \begin{document}
@@ -41,17 +44,18 @@
 \end{multicols}
 \end{frame}
 
+
 \section{Some examples}
 \subsection{Ariane 5 mission}
 \begin{frame}
 \frametitle{Ariane 5 mission}
-\only<1>{\includegraphics[scale=0.35]{ariane}}
-\only<2>
+\only<1>
 {
   In 1996, the Ariane 5 rocket was reusing software from the Ariane 4. 37 seconds after its maiden launch the self-destruct safety mechanism was activated. \\~\\
   A data conversion from 64-bit floating point value to 16-bit signed integer value to be stored in a variable representing horizontal bias caused a processor trap because the floating point value was too large to be represented by a 16-bit signed integer. \footnote{https://en.wikipedia.org/wiki/Ariane\_5\#Notable\_launches} \\~\\
   This bug, existing in Ariane 4 software never came out on Ariane 4 rocket.
 }
+\only<2>{\includegraphics[scale=0.35]{ariane}}
 \end{frame}
 
 \subsection{Calculator source code}
@@ -60,6 +64,7 @@
 \only<1>{ \lstinputlisting[linerange={26-36}]{"src/calculator.cpp"} }
 \only<2>{ \lstinputlisting[linerange={38-60}]{"src/calculator.cpp"} }
 \only<3>{ \lstinputlisting[linerange={62-74}]{"src/calculator.cpp"} }
+\only<4>{ \lstinputlisting[linerange={76-88}]{"src/calculator.cpp"} }
 \end{frame}
 
 \subsection{Blender interface}
@@ -87,54 +92,199 @@
 \uncover<3-3>{Also, each class has an \textbf{invariant} which must be satisfied after any changes to the object represented by the class. In the other words, the invariant guarantees the object is in a valid state.}
 \end{frame}
 
-\subsection{DbC function template}
+\subsection{Precondition example}
 \begin{frame}[fragile]
-\frametitle{DbC function template}
-\begin{lstlisting}[caption=http://www.cs.unc.edu/~stotts/COMP204/contract.html]
-   SomeClass::someFunction ( AnotherClass *fillMeWithData )
-   {
-      // check any preconditions here
-      preCondition ( fillMeWithData );   // non-NULL check
+\frametitle{Precondition example}
+\begin{lstlisting}[caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
+double sqrt( double r )
+in // start a block with preconditions
+{
+    r > 0.0: throw bad_input();
+}
+do // normal function body
+{
+    ...
+}\end{lstlisting}
+\end{frame}
 
-      // do your stuff to add the functionality here
-      ...
-
-      // check post conditions
-      postCondition ( fillMeWithData->hasData() );  -- did we do what we said
-
-      postCondition ( checkInvariant() );  -- class invariant check required 
-                                           -- because of lack of lang support
-   }
+\subsection{Postcondition example}
+\begin{frame}[fragile]
+\frametitle{Postcondition example}
+\begin{lstlisting}[caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
+int foo( int& i )
+out // start block with postconditions
+{
+i == in i + 1;
+return % 2 == 0;
+}
+do // normal function body
+{
+i++;
+return 4;
+}
 \end{lstlisting}
 \end{frame}
 
-\subsection{Let's implement the mechanism}
+\subsection{Class invariant example}
 \begin{frame}[fragile]
-\frametitle{Let's implement the mechanism}
-\begin{lstlisting}
-    #define  preCondition(c)     assert(c)
-    #define  postCondition(c)    assert(c)
-\end{lstlisting}
-\begin{lstlisting}
-    #define  preCondition(c)     if(!c) throw exception("preCondition c failed!")
-    #define  postCondition(c)    if(!c) throw exception("Condition c failed!")
+\frametitle{Class invariant example}
+\begin{lstlisting}[caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
+class container
+{
+    // ...
+    invariant
+    {
+        size() >= 0;
+        size() <= max_size();
+        is_empty() implies size() == 0;
+        is_full() implies size() == max_size();
+        distance( begin(), end() ) == size();
+    }
+};
 \end{lstlisting}
 \end{frame}
 
 
-
-\subsection{what is our contract}
-\subsection{source code with contract}
 \section{How does it work?}
+\subsection{Custom DbC C++ function template}
+\begin{frame}[fragile]
+\frametitle{Custom DbC C++ function template}
+\begin{lstlisting}
+void SomeClass::someMethod(AnotherClass *fillMeWithData)
+{
+    preCondition(fillMeWithData != nullptr);
+
+    // your code goes here...
+
+    postCondition(fillMeWithData->hasData());
+    postCondition(checkInvariant());
+}
+\end{lstlisting}
+\end{frame}
+
+\subsection{Let's implement the contract mechanism}
+\begin{frame}[fragile]
+\frametitle{Let's implement the contract mechanism}
+\begin{lstlisting}
+#define preCondition(c)  assert(c)
+#define postCondition(c) assert(c)
+\end{lstlisting}
+\begin{lstlisting}
+#define preCondition(c) \
+        if(!c) \
+        throw preConditionException("preCondition c failed!")
+        
+#define postCondition(c) \
+        if(!c) \
+        throw postConditionException("postCondition c failed!")
+\end{lstlisting}
+\only<2-4>{Any problems here? \\~\\}
+\only<3-4>{Propagation in inheritance. You lose your contractual agreement when you override this function. \\~\\}
+\only<4-4>{Solution: Non virtual interface (NVI idiom)}
+\end{frame}
+
+\subsection{Non-virtual interface example}
+\begin{frame}[fragile]
+\frametitle{Non-virtual interface example}
+\only<1>{ \lstinputlisting[linerange={13-36}]{"src/nvi.hpp"} }
+\end{frame}
+
+
+\section{Language support}
+\subsection{DbC support in some languages}
+\begin{frame}
+\frametitle{DbC support in some languages}
+\begin{itemize}
+  \item C++
+  \begin{itemize}
+    \item GNU Nana: https://savannah.gnu.org/projects/nana
+    \item Escher C++ Verifier: http://eschertech.com/products/ecv.php
+    \item Loki Contract Checker: http://loki-lib.sourceforge.net
+  \end{itemize}
+  \item Java
+  \begin{itemize}
+    \item \textbf{iContract}/jContracts: http://sourceforge.net/projects/jcontracts
+    \item valid4j: https://github.com/helsing/valid4j
+    \item jContractor: http://jcontractor.sourceforge.net
+  \end{itemize}
+  \item Python
+  \begin{itemize}
+    \item PyContracts: https://pypi.python.org/pypi/PyContracts
+    \item PyDBC: https://pypi.python.org/pypi/PyDBC
+  \end{itemize}
+  \item .Net
+  \begin{itemize}
+    \item Code Contracts: http://research.microsoft.com/en-us/projects/contracts
+  \end{itemize}
+  \item \textbf{D}: built-in mechanism
+  \item \textbf{Eiffel}: built-in mechanism
+\end{itemize}
+\end{frame}
+
+\subsection{Eiffel - it started here}
+\begin{frame}[fragile]
+\frametitle{Eiffel - it started here}
+\begin{lstlisting}[language=Eiffel,caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
+put( x: ELEMENT; key: STRING ) is
+require
+    count <= capacity
+    not key.empty
+do
+    ... Some insertion algorithm ...
+ensure
+    has( x )
+    item( key ) = x
+    count = old count + 1
+end
+
+...
+
+class ACCOUNT
+invariant
+    consistent_balance: balance = all_deposits.total
+    ... rest of class ...
+end\end{lstlisting}
+\end{frame}
+
+\subsection{D - built-in mechanism}
+\begin{frame}[fragile]
+\frametitle{D - built-in mechanism}
+\begin{lstlisting}[caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
+int add_one( int i )
+in { assert( i > 0 ); }
+out( result ) { assert( result == i + 1 ); }
+body
+{
+    return i + 1;
+}
+
+class Date
+{
+    int day;
+    int hour;
+    invariant
+    {
+        assert( 1 <= day && day <= 31 );
+        assert( 0 <= hour && hour < 24 );
+    }
+}
+\end{lstlisting}
+\end{frame}
+
+\subsection{Java - iContract}
+\begin{frame}[fragile]
+\frametitle{Java - iContract}
+\begin{lstlisting}
+some java code here
+\end{lstlisting}
+\end{frame}
+
+\section{iContract - quick overview}
 \subsection{Preparsing}
 \subsection{Code generation}
 \subsection{example of generated code}
-\section{Different languages}
-\subsection{C++ - nana}
-\subsection{Java - iContract}
-\subsection{D - built-in mechanism}
-\subsection{Eiffel - it started here}
-\subsection{C++ - assertions}
+
+
 \section{Some statistics}
 \subsection{Code bloat - numbers}
 \subsection{C++ - without, validations, contracts, generated}
@@ -188,5 +338,6 @@ Jakis przyklad
 \end{exampleblock}
 \end{frame}
 
+% http://www.cs.unc.edu/~stotts/COMP204/contract.html
 
 \end{document}
