@@ -1,0 +1,17 @@
+put( x: ELEMENT; key: STRING ) is
+require
+    count <= capacity
+    not key.empty
+do
+    ... Some insertion algorithm ...
+ensure
+    has( x )
+    item( key ) = x
+    count = old count + 1
+end
+
+class ACCOUNT
+invariant
+    consistent_balance: balance = all_deposits.total
+    ... rest of class ...
+end

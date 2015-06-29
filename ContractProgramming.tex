@@ -4,6 +4,7 @@
 \usepackage{multicol}
 \usepackage{graphicx}
 \usepackage{caption}
+\usepackage{soul}
 
 \usetheme{Frankfurt}
 \usecolortheme{default}
@@ -67,11 +68,117 @@
 \only<4>{ \lstinputlisting[linerange={76-88}]{"src/calculator.cpp"} }
 \end{frame}
 
+\subsection{Calculator source code}
+\begin{frame}[fragile]
+\frametitle{Basic calculator - summary}
+What should we do when input is not valid?
+\pause
+\begin{itemize}[<+->]
+  \item nothing (very clean code, but not recommended)
+  \item signal the problem (return optional, special or magic values - NaN, 0, none)
+  \item throw an exception (and force the user to catch it)
+  \item terminate the application that si about to enter an UB
+\end{itemize}
+\pause
+\begin{block}{}
+It will be considered it later
+\end{block}
+\end{frame}
+
 \subsection{Blender interface}
+\begin{frame}
+\frametitle{Blender interface}
+Acceptance Criteria
+\begin{itemize}
+  \item blender cannot run empty
+  \item speed can be changed only by 1
+  \item speed range is from 0 to 9 
+\end{itemize}
+\pause
+\begin{block}{}
+ATDD - Acceptance Test Driven Development
+\end{block}
+\end{frame}
+
 \begin{frame}[fragile]
 \frametitle{Blender interface}
-\only<1>{ \lstinputlisting[linerange={26-36}]{"src/Blender.java"} }
+\lstinputlisting[linerange={3-30},basicstyle=\tiny]{"src/Blender.java"}
 \end{frame}
+
+
+\subsection{DB query example by A. Krzemieński}
+\begin{frame}[fragile]
+\frametitle{DB query example by A. Krzemieński}
+\lstinputlisting[linerange={-12}]{"src/db.cpp"}
+\end{frame}
+
+\begin{frame}
+\frametitle{Possible inputs}
+\begin{block}{When end-user is nice...}
+Tom
+\end{block}
+
+\pause
+\begin{block}{When end-user is malicious...}
+JOHN'; delete from USERS where 'a' = 'a
+\end{block}
+
+\pause
+\begin{alertblock}{Achtung!}
+SQL Injection vulnerability! \\~\\
+select count(*) from USERS where NAME = '\hl{JOHN'; delete from USERS where 'a' = 'a}';
+\end{alertblock}
+\end{frame}
+
+\begin{frame}
+\frametitle{Who is guilty?}
+\lstinputlisting[linerange={-12}]{"src/db.cpp"}
+\begin{block}{}
+\small{Assuming that functions \textit{checkIfUserExists} and \textit{authenticate} were written by two different people, which of them is responsible for the bug?}
+\end{block}
+\pause
+\begin{block}{}
+\small{Without clearly stated expectations, it is impossible to tell whose fault it is: it is a failure to communicate between two programmers (or even one).}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\frametitle{Let's fix it!}
+We have two problems then:
+\begin{itemize}
+  \item the program has a bug
+  \item it is not clear whose responsibility it is
+\end{itemize}
+\pause
+\begin{block}{Implementation of name validation}
+\lstinputlisting[linerange={14-19},numbers=none]{"src/db.cpp"}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\frametitle{Let's fix it!}
+\lstinputlisting[linerange={21-37}]{"src/db.cpp"}
+\pause
+\begin{block}{}
+Nobody trusts nobody and everyone just checks for the dangerous conditions.
+\end{block}
+\end{frame}
+
+\begin{frame}
+\frametitle{Let's fix it!}
+Problems:
+\begin{itemize}[<+->]
+  \item Performance: checking the same condition many times
+  \item Readability: code becomes messy
+  \item Flow: if SIGNAL() throws someone needs to catch the exception
+\end{itemize}
+\pause
+\begin{block}{What should SIGNAL() do?}
+\pause
+Whatever we choose, the program will grow in complexity; and complexity (especially a messy one like this) is likely to cause bugs.
+\end{block}
+\end{frame}
+
 
 
 \section{DbC Theory}
@@ -95,99 +202,31 @@
 \subsection{Precondition example}
 \begin{frame}[fragile]
 \frametitle{Precondition example}
-\begin{lstlisting}[caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
-double sqrt( double r )
-in // start a block with preconditions
-{
-    r > 0.0: throw bad_input();
-}
-do // normal function body
-{
-    ...
-}\end{lstlisting}
+\lstinputlisting[linerange={17-25}]{"src/proposal.cpp"}
 \end{frame}
 
 \subsection{Postcondition example}
 \begin{frame}[fragile]
 \frametitle{Postcondition example}
-\begin{lstlisting}[caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
-int foo( int& i )
-out // start block with postconditions
-{
-i == in i + 1;
-return % 2 == 0;
-}
-do // normal function body
-{
-i++;
-return 4;
-}
-\end{lstlisting}
+\lstinputlisting[linerange={27-37}]{"src/proposal.cpp"}
 \end{frame}
 
 \subsection{Class invariant example}
 \begin{frame}[fragile]
 \frametitle{Class invariant example}
-\begin{lstlisting}[caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
-class container
-{
-    // ...
-    invariant
-    {
-        size() >= 0;
-        size() <= max_size();
-        is_empty() implies size() == 0;
-        is_full() implies size() == max_size();
-        distance( begin(), end() ) == size();
-    }
-};
-\end{lstlisting}
+\lstinputlisting[linerange={39-50}]{"src/proposal.cpp"}
 \end{frame}
 
-
-\section{How does it work?}
-\subsection{Custom DbC C++ function template}
-\begin{frame}[fragile]
-\frametitle{Custom DbC C++ function template}
-\begin{lstlisting}
-void SomeClass::someMethod(AnotherClass *fillMeWithData)
-{
-    preCondition(fillMeWithData != nullptr);
-
-    // your code goes here...
-
-    postCondition(fillMeWithData->hasData());
-    postCondition(checkInvariant());
-}
-\end{lstlisting}
+\subsection{Example from latest C++ DbC proposal}
+\begin{frame}
+\frametitle{Example from latest C++ DbC proposal}
+\lstinputlisting[linerange={1-15}]{"src/proposal.cpp"}
+\pause
+\begin{block}{}
+Examples from C++ Design by Contract proposal: n1962, n1613.
+\end{block}
 \end{frame}
 
-\subsection{Let's implement the contract mechanism}
-\begin{frame}[fragile]
-\frametitle{Let's implement the contract mechanism}
-\begin{lstlisting}
-#define preCondition(c)  assert(c)
-#define postCondition(c) assert(c)
-\end{lstlisting}
-\begin{lstlisting}
-#define preCondition(c) \
-        if(!c) \
-        throw preConditionException("preCondition c failed!")
-        
-#define postCondition(c) \
-        if(!c) \
-        throw postConditionException("postCondition c failed!")
-\end{lstlisting}
-\only<2-4>{Any problems here? \\~\\}
-\only<3-4>{Propagation in inheritance. You lose your contractual agreement when you override this function. \\~\\}
-\only<4-4>{Solution: Non virtual interface (NVI idiom)}
-\end{frame}
-
-\subsection{Non-virtual interface example}
-\begin{frame}[fragile]
-\frametitle{Non-virtual interface example}
-\only<1>{ \lstinputlisting[linerange={13-36}]{"src/nvi.hpp"} }
-\end{frame}
 
 
 \section{Language support}
@@ -200,6 +239,7 @@ void SomeClass::someMethod(AnotherClass *fillMeWithData)
     \item GNU Nana: https://savannah.gnu.org/projects/nana
     \item Escher C++ Verifier: http://eschertech.com/products/ecv.php
     \item Loki Contract Checker: http://loki-lib.sourceforge.net
+    \item Contract++: http://sourceforge.net/p/contractpp/wiki/Home
   \end{itemize}
   \item Java
   \begin{itemize}
@@ -224,177 +264,53 @@ void SomeClass::someMethod(AnotherClass *fillMeWithData)
 \subsection{Eiffel - it started here}
 \begin{frame}[fragile]
 \frametitle{Eiffel - it started here}
-\begin{lstlisting}[language=Eiffel,caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
-put( x: ELEMENT; key: STRING ) is
-require
-    count <= capacity
-    not key.empty
-do
-    ... Some insertion algorithm ...
-ensure
-    has( x )
-    item( key ) = x
-    count = old count + 1
-end
-\end{lstlisting}
+\lstinputlisting[linerange={1-11},language=Eiffel]{"src/examples.eiffel"}
 \end{frame}
 
 \begin{frame}[fragile]
 \frametitle{Eiffel - it started here}
-\begin{lstlisting}[language=Eiffel,caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
-class ACCOUNT
-invariant
-    consistent_balance: balance = all_deposits.total
-    ... rest of class ...
-end\end{lstlisting}
+\lstinputlisting[linerange={13-17},language=Eiffel]{"src/examples.eiffel"}
 \end{frame}
 
 \subsection{D - built-in mechanism}
 \begin{frame}[fragile]
 \frametitle{D - built-in mechanism}
-\begin{lstlisting}[caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
-int add_one( int i )
-in
-{
-    assert( i > 0 );
-}
-out( result )
-{
-    assert( result == i + 1 );
-}
-body
-{
-    return i + 1;
-}
-\end{lstlisting}
+\lstinputlisting[linerange={1-13}]{"src/examples.d"}
 \end{frame}
 
 \begin{frame}[fragile]
 \frametitle{D - built-in mechanism}
-\begin{lstlisting}[caption=http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1613.pdf]
-class Date
-{
-    int day;
-    int hour;
-    invariant
-    {
-        assert( 1 <= day && day <= 31 );
-        assert( 0 <= hour && hour < 24 );
-    }
-}
-\end{lstlisting}
+\lstinputlisting[linerange={15-24}]{"src/examples.d"}
 \end{frame}
 
 \subsection{Java - iContract}
-\begin{frame}
-\frametitle{Java - iContract}
-Insert something here
-\end{frame}
-
-\section{iContract - quick overview}
 \begin{frame}[fragile]
 \frametitle{iContract - quick overview}
-\begin{lstlisting}[language=Java]
-/** 
- * @pre f >= 0.0
- * @post Math.abs((return * return) - f) < 0.001 
- */ 
-public float sqrt(float f)
-{
-    ...
-} 
-
-
-/**
- *  Append an element to a collection.
- *
- *  @post c.size() == c@pre.size() + 1
- *  @post c.contains(o)
- */
-public void append(Collection c, Object o)
-{
-    ...
-}
-\end{lstlisting}
+\lstinputlisting[linerange={1-19},language=Java]{"src/iContract.java"}
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{Java - iContract}
-\begin{lstlisting}[language=Java]
-/**
- *  A PositiveInteger is an Integer that is guaranteed to be positive.
- *
- *  @inv intValue() > 0
- */
-class PositiveInteger extends Integer
-{
-    ...
-}
-\end{lstlisting}
+\frametitle{Java - iContract: class invariants}
+\lstinputlisting[linerange={21-29},language=Java]{"src/iContract.java"}
 \end{frame}
 
 \begin{frame}[fragile]
 \frametitle{Java - iContract: forall \& exists quantifiers}
-\begin{lstlisting}[language=Java,caption=http://www.javaworld.com/article/2074956/learn-java/icontract--design-by-contract-in-java.html]
-/*
- * @invariant forall IEmployee e in getEmployees() |
- *              getRooms().contains(e.getOffice())
- */
-\end{lstlisting}
-\begin{lstlisting}[language=Java]
-/**
- * @post exists IRoom r in getRooms() | r.isAvailable()
- */
-\end{lstlisting}
+\lstinputlisting[linerange={31-34},language=Java]{"src/iContract.java"}
+\lstinputlisting[linerange={36-38},language=Java]{"src/iContract.java"}
 \end{frame}
 
 \begin{frame}[fragile]
 \frametitle{Java - iContract: implications and logical operators}
-\begin{lstlisting}[language=Java,caption=http://www.javaworld.com/article/2074956/learn-java/icontract--design-by-contract-in-java.html]
-/**
- * @invariant getRooms().isEmpty() implies
- *            getEmployees().isEmpty() // no rooms, no employees
- */
-\end{lstlisting}
-\begin{lstlisting}[language=Java] 
-/**
- * @invariant forall IEmployee e1 in getEmployees() |
- *            forall IEmployee e2 in getEmployees() |
- *            (e1 != e2) implies e1.getOffice() != e2.getOffice()
- *            // a single office per employee
- */
-\end{lstlisting}
+\lstinputlisting[linerange={40-43},language=Java]{"src/iContract.java"}
+\lstinputlisting[linerange={45-50},language=Java]{"src/iContract.java"}
 \end{frame}
-
 
 \begin{frame}[fragile]
 \frametitle{Java - iContract: Stack interface example}
 \begin{columns}
 \column{.75\textwidth}
-\begin{lstlisting}[language=Java]
-/**
- *  @inv !isEmpty() implies top() != null
- */
-public interface Stack
-{
-    /**
-     *  @pre o != null
-     *  @post !isEmpty()
-     *  @post top() == o
-     */
-    void push(Object o);
-    /**
-     *  @pre !isEmpty()
-     *  @post @return == top()@pre
-     */
-    Object pop();
-    /**
-     *  @pre !isEmpty()
-     */
-    Object top();
-    boolean isEmpty();
-}
-\end{lstlisting}
+\lstinputlisting[linerange={3-24},language=Java]{"src/Stack.java"}
 \column{.25\textwidth}
 \uncover<2->{Hey man, aren't they a unit tests? \\~\\}
 \uncover<3->{Maybe I can skip them? \\~\\}
@@ -405,24 +321,15 @@ public interface Stack
 \end{frame}
 
 \subsection{iContract - testing contracts}
+\begin{frame}
+\frametitle{Java - iContract: testing contract}
+\lstinputlisting[linerange={26-50},language=Java,basicstyle=\tiny]{"src/Stack.java"}
+\end{frame}
+
 \begin{frame}[fragile]
 \frametitle{Java - iContract: testing contract}
-\begin{lstlisting}[language=Java]
-public  class StackTest
-{
-    public static void main(String[] args)
-    {
-        final Stack s = new StackImpl();
-        s.push("one");
-        s.pop();
-        s.push("two");
-        s.push("three");
-        s.pop();
-        s.pop();
-        s.pop();    //  causes an assertion to fail
-    }
-}
-\end{lstlisting}
+\lstinputlisting[linerange={52-65},language=Java]{"src/Stack.java"}
+\pause
 \begin{lstlisting}[basicstyle=\ttfamily\tiny]
 $ java -cp ./instr StackTest
 Exception in thread "main" java.lang.RuntimeException:
@@ -434,9 +341,85 @@ precondition violated (StackImpl::top()): (/*declared in Stack::top()*/ (!isEmpt
 \end{lstlisting}
 \end{frame}
 
-\subsection{Preparsing}
-\subsection{Code generation}
-\subsection{example of generated code}
+\subsection{iContract - summary}
+\begin{frame}
+\frametitle{Java - iContract: Summary}
+\begin{block}{How does it work?}
+\begin{itemize}[<+->]
+  \item iContract preprocessor checks the JavaDoc comments for keywords
+  \item iContract generates additional code for contract validation
+  \item iContract wraps function calls with generated precondition and postcondition checks
+\end{itemize}
+\end{block}
+\pause
+\begin{block}{Summary}
+\begin{itemize}[<+->]
+  \item JavaDoc style
+  \item Contracts are in the documentation and in the code
+  \item Contract compilation independent on code compilation
+  \item Less whitebox testing
+  \item Testing contracts / interactions
+\end{itemize}
+\end{block}
+\end{frame}
+
+
+
+
+\section{Our own C++ DbC implementation}
+\subsection{Custom DbC C++ function template}
+\begin{frame}[fragile]
+\frametitle{Custom DbC C++ function template}
+\begin{lstlisting}
+void SomeClass::someMethod(AnotherClass *fillMeWithData)
+{
+    preCondition(fillMeWithData != nullptr);
+
+    // your code goes here...
+
+    postCondition(fillMeWithData->hasData());
+    postCondition(checkInvariant());
+}
+\end{lstlisting}
+\end{frame}
+
+\subsection{Let's implement the contract mechanism}
+\begin{frame}[fragile]
+\frametitle{Let's implement the contract mechanism}
+\begin{lstlisting}
+#define preCondition(c)  assert(c)
+#define postCondition(c) assert(c)
+\end{lstlisting}
+\begin{block}{}
+In mentioned proposals preconditions and postconditions are by default implemented with assertions, but they can be customized.
+\end{block}
+\pause
+
+\begin{lstlisting}
+#define preCondition(c) \
+        if(!c) { \
+            std::cerr << __FILE__ << ":" << __LINE__ << ": " << c; \
+            throw preConditionException("preCondition c failed!"); \
+        }
+        
+#define postCondition(c) \
+        if(!c) { \
+            std::cerr << __FILE__ << ":" << __LINE__ << ": " << c; \
+            throw postConditionException("postCondition c failed!"); \
+        }
+\end{lstlisting}
+\only<2-4>{Any problems here? \\~\\}
+\only<3-4>{Propagation in inheritance. You lose your contractual agreement when you override this function. \\~\\}
+\only<4-4>{Solution: Non virtual interface (NVI idiom)}
+\end{frame}
+
+\subsection{Non-virtual interface example}
+\begin{frame}[fragile]
+\frametitle{Non-virtual interface example}
+\only<1>{ \lstinputlisting[linerange={13-36}]{"src/nvi.hpp"} }
+\end{frame}
+
+
 
 
 \section{Some statistics} %maybe skip it?
@@ -457,6 +440,16 @@ Before you call the functionality ready, think about contract - preconditions, p
 \end{frame}
 
 
+\subsection{End quote}
+\begin{frame}
+\frametitle{End quote}
+\begin{center}
+\Large \textit{Nothing astonishes men so much as common sense and plain dealing}
+\large \textbf{Ralph Waldo Emerson, Essays} \\~\\
+\includegraphics[scale=0.65]{emerson}
+\end{center}
+\end{frame}
+
 \subsection{Q \& A}
 \begin{frame}
 \frametitle{Q \& A}
@@ -467,20 +460,37 @@ Before you call the functionality ready, think about contract - preconditions, p
 \end{frame}
 
 
+\subsection{Bibliography}
+\begin{frame}[shrink=15]
+\frametitle{Bibliography}
+\begin{thebibliography}{10}
+\beamertemplatebookbibitems
+\bibitem{ahunt1}
+A. Hunt, D. Thomas
+\newblock {\em The Pragmatic Programmer. From journeyman to master}.
 
+\beamertemplatearticlebibitems
+\bibitem{akrzemi1}
+A. Krzemieński
+\newblock {Preconditions - part I}
+\newblock {\em https://akrzemi1.wordpress.com/2013/01/04/preconditions-part-i/}
 
-\begin{frame}
-\begin{block}{To jest blok}
-Jakas informacja
-\end{block}
+\bibitem{dstotts1}
+D. Stotts
+\newblock {Programming by Contract}
+\newblock {\em http://www.cs.unc.edu/~stotts/COMP204/contract.html}
 
-\begin{alertblock}{To jest Alert block}
-Jakas wazna informacja
-\end{alertblock}
+\bibitem{dstotts1}
+L. Crowl, T. Ottosen
+\newblock {Proposal to add Contract Programming to C++ (revision 4)}
+\newblock {\em http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n1962.html}
 
-\begin{exampleblock}{To jest Example block}
-Jakis przyklad
-\end{exampleblock}
+\bibitem{dstotts1}
+O. Enseling
+\newblock {iContract: Design by Contract in Java}
+\newblock {\em http://www.javaworld.com/article/2074956/learn-java/icontract--design-by-contract-in-java.html}
+
+\end{thebibliography}
 \end{frame}
 
 % http://www.cs.unc.edu/~stotts/COMP204/contract.html
