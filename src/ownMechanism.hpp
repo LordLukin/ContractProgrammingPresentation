@@ -1,8 +1,17 @@
 #include "contract.hpp"
 
-class AnotherClass;
+class AnotherClass
+{
+public:
+    bool hasData() const
+    {
+        return false;
+    }
+};
 
 class SomeClass
 {
-    someMethod(AnotherClass *fillMeWithData);
+    bool checkInvariant();
+public:
+    void someMethod(AnotherClass *fillMeWithData);
 };

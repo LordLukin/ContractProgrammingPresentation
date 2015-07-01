@@ -62,7 +62,7 @@ int calculateWithChecks(int a, int b, Operation op)
 
 int calculateWithAssertions(int a, int b, Operation op)
 {
-    assert(a >= 0 || b >= 0);
+    assert(a >= 0 && b >= 0);
     switch(op)
     {
         case Add:      return a + b;
@@ -70,21 +70,20 @@ int calculateWithAssertions(int a, int b, Operation op)
         case Multiply: return a * b;
         case Divide:   assert(b != 0.0);
                        return a / b;
-        default:       throw logic_error("Undefined operation");
+        default:       assert(false && "Undefined operation");
     }
 }
 
 int calculateWithContract(int a, int b, Operation op)
 {
-    precondition(a >= 0 || b >= 0);
+    precondition(a >= 0 && b >= 0);
     switch(op)
     {
         case Add:      return a + b;
         case Subtract: return a - b;
         case Multiply: return a * b;
-        case Divide:   precondition(b != 0.0);
+        default:       precondition(b != 0.0);
                        return a / b;
-        default:       throw logic_error("Undefined operation");
     }
 }
 

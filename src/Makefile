@@ -1,8 +1,6 @@
 CXX = g++
 CXXFLAGS = -Wall -Werror -pedantic -O2 -std=c++11
 LDFLAGS = -Wall -Werror -pedantic -O2 -std=c++11
-OBJS = calculator.o
-SRCS = calculator.cpp
 
 JFLAGS = -g
 JC = javac
@@ -10,14 +8,20 @@ JC = javac
 .java.class:
 	$(JC) $(JFLAGS) $*.java
 
-all: calculator blender
+all: calculator blender ownMechanism
 
-calculator: $(OBJS)
+calculator: calculator.o
 	$(CXX) $(LDFLAGS) $^ -o $@
 
-$(OBJS): $(SRCS)
+ownMechanism: ownMechanism.o
+	$(CXX) $(LDFLAGS) $^ -o $@
+
+ownMechanism.o: ownMechanism.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+calculator.o: calculator.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+	
 CLASSES = \
 	Blender.java
 

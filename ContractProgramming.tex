@@ -39,14 +39,12 @@
 \end{frame}
 
 \begin{frame}
-\frametitle{Table of Contents}
-\begin{multicols}{2}
-\tableofcontents
-\end{multicols}
+\frametitle{Agenda}
+\tableofcontents[hideallsubsections]
 \end{frame}
 
 
-\section{Some examples}
+\section{Problematic examples}
 \subsection{Ariane 5 mission}
 \begin{frame}
 \frametitle{Ariane 5 mission}
@@ -62,10 +60,10 @@
 \subsection{Calculator source code}
 \begin{frame}[fragile]
 \frametitle{Basic calculator}
-\only<1>{ \lstinputlisting[linerange={26-36}]{"src/calculator.cpp"} }
-\only<2>{ \lstinputlisting[linerange={38-60}]{"src/calculator.cpp"} }
-\only<3>{ \lstinputlisting[linerange={62-74}]{"src/calculator.cpp"} }
-\only<4>{ \lstinputlisting[linerange={76-88}]{"src/calculator.cpp"} }
+\only<1>{ \lstinputlisting[linerange={27-37}]{"src/calculator.cpp"} }
+\only<2>{ \lstinputlisting[linerange={39-61}]{"src/calculator.cpp"} }
+\only<3>{ \lstinputlisting[linerange={63-75}]{"src/calculator.cpp"} }
+\only<4>{ \lstinputlisting[linerange={77-88}]{"src/calculator.cpp"} }
 \end{frame}
 
 \subsection{Calculator source code}
@@ -77,17 +75,20 @@ What should we do when input is not valid?
   \item nothing (very clean code, but not recommended)
   \item signal the problem (return optional, special or magic values - NaN, 0, none)
   \item throw an exception (and force the user to catch it)
-  \item terminate the application that si about to enter an UB
+  \item terminate the application that is about to enter an UB
 \end{itemize}
 \pause
 \begin{block}{}
-It will be considered it later
+Proper behavior will be considered later
 \end{block}
 \end{frame}
 
 \subsection{Blender interface}
 \begin{frame}
 \frametitle{Blender interface}
+
+\begin{columns}
+\column{.6\textwidth}
 Acceptance Criteria
 \begin{itemize}
   \item blender cannot run empty
@@ -98,6 +99,9 @@ Acceptance Criteria
 \begin{block}{}
 ATDD - Acceptance Test Driven Development
 \end{block}
+\column{.4\textwidth}
+\includegraphics[scale=0.2]{kitten_in_blender}
+\end{columns}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -165,7 +169,14 @@ Nobody trusts nobody and everyone just checks for the dangerous conditions.
 \end{frame}
 
 \begin{frame}
-\frametitle{Let's fix it!}
+\frametitle{Fixed!}
+\begin{center}
+\includegraphics[scale=0.55]{steering_wheel}
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{Problem fixed, but anothers arised}
 Problems:
 \begin{itemize}[<+->]
   \item Performance: checking the same condition many times
@@ -184,7 +195,7 @@ Whatever we choose, the program will grow in complexity; and complexity (especia
 \section{DbC Theory}
 \subsection{What is a contract?}
 \begin{frame}
-\frametitle{What is Contract by Design?}
+\frametitle{What is Design by Contract?}
 \setbeamercovered{transparent}
 \uncover<1-2>{A paradigm which was first introduced by Bertrand Meyer, the creator of Eiffel. Although Eiffel has support for programming by contract built into the language, most of the concepts can be used in any language \footnote{http://www.cs.unc.edu/~stotts/COMP204/contract.html}.  \\~\\}
 \uncover<2-2>{Basically programming by contract creates a contract between the software developer and software user - in Meyer's terms the supplier and the consumer.  \\~\\}
@@ -320,6 +331,13 @@ Examples from C++ Design by Contract proposal: n1962, n1613.
 \end{columns}
 \end{frame}
 
+\begin{frame}[fragile]
+\frametitle{Java - iContract: Stack interface example}
+\begin{center}
+\includegraphics[scale=0.6]{morpheus_ut}
+\end{center}
+\end{frame}
+
 \subsection{iContract - testing contracts}
 \begin{frame}
 \frametitle{Java - iContract: testing contract}
@@ -356,7 +374,7 @@ precondition violated (StackImpl::top()): (/*declared in Stack::top()*/ (!isEmpt
 \begin{itemize}[<+->]
   \item JavaDoc style
   \item Contracts are in the documentation and in the code
-  \item Contract compilation independent on code compilation
+  \item Users / callers can see your contract
   \item Less whitebox testing
   \item Testing contracts / interactions
 \end{itemize}
@@ -366,89 +384,125 @@ precondition violated (StackImpl::top()): (/*declared in Stack::top()*/ (!isEmpt
 
 
 
-\section{Our own C++ DbC implementation}
-\subsection{Custom DbC C++ function template}
-\begin{frame}[fragile]
-\frametitle{Custom DbC C++ function template}
-\begin{lstlisting}
-void SomeClass::someMethod(AnotherClass *fillMeWithData)
-{
-    preCondition(fillMeWithData != nullptr);
-
-    // your code goes here...
-
-    postCondition(fillMeWithData->hasData());
-    postCondition(checkInvariant());
-}
-\end{lstlisting}
-\end{frame}
-
+\section{Own C++ DbC implementation}
 \subsection{Let's implement the contract mechanism}
 \begin{frame}[fragile]
 \frametitle{Let's implement the contract mechanism}
-\begin{lstlisting}
-#define preCondition(c)  assert(c)
-#define postCondition(c) assert(c)
-\end{lstlisting}
+\lstinputlisting[linerange={23-24}]{"src/contract.hpp"}
 \begin{block}{}
 In mentioned proposals preconditions and postconditions are by default implemented with assertions, but they can be customized.
 \end{block}
 \pause
+\lstinputlisting[linerange={26-35}]{"src/contract.hpp"}
+\end{frame}
 
-\begin{lstlisting}
-#define preCondition(c) \
-        if(!c) { \
-            std::cerr << __FILE__ << ":" << __LINE__ << ": " << c; \
-            throw preConditionException("preCondition c failed!"); \
-        }
-        
-#define postCondition(c) \
-        if(!c) { \
-            std::cerr << __FILE__ << ":" << __LINE__ << ": " << c; \
-            throw postConditionException("postCondition c failed!"); \
-        }
-\end{lstlisting}
-\only<2-4>{Any problems here? \\~\\}
-\only<3-4>{Propagation in inheritance. You lose your contractual agreement when you override this function. \\~\\}
-\only<4-4>{Solution: Non virtual interface (NVI idiom)}
+\begin{frame}
+\frametitle{Let's implement the contract mechanism}
+\begin{center}
+\includegraphics[scale=0.5]{cat_wtf}
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Let's implement the contract mechanism}
+\lstinputlisting[linerange={22-36}]{"src/contract.hpp"}
+\end{frame}
+
+\subsection{Custom DbC C++ function template}
+\begin{frame}[fragile]
+\frametitle{Custom DbC C++ function template}
+\lstinputlisting[linerange={8-16}]{"src/ownMechanism.cpp"}
+\pause
+Any problems with this mechanism? (despite macros) \\~\\
+\pause
+Propagation in inheritance. You lose your contractual agreement when you override someMethod in derived class. \\~\\
+\pause
+Solution: Non virtual interface (NVI idiom)
 \end{frame}
 
 \subsection{Non-virtual interface example}
 \begin{frame}[fragile]
 \frametitle{Non-virtual interface example}
-\only<1>{ \lstinputlisting[linerange={13-36}]{"src/nvi.hpp"} }
+\lstinputlisting[linerange={13-36}]{"src/nvi.hpp"}
+\end{frame}
+
+\subsection{Possible further code development}
+\begin{frame}
+\frametitle{Possible further code development}
+\begin{itemize}
+  \item pre and postconditions as callbacks (std::function, function ptrs, functors, lambdas)
+  \item pre and postconditions as template parameters
+  \item use constexpr functions as preconditions
+  \item use switch to change behavior during runtime
+\end{itemize}
+\end{frame}
+
+\subsection{Assert or throw?}
+\begin{frame}[fragile]
+\frametitle{Assert or throw?}
+\begin{alertblock}{ACHTUNG!}
+Calling a function whose precondition is not satisfied results in \textit{undefined behavior}
+\end{alertblock}
+\pause
+The caller is not allowed to make any assumptions about the results of the function call. \\
+It allows the function author to do the following things:
+\begin{enumerate}[<+->]
+  \item Optimize code based on assumption that precondition always holds.
+  \item Verify the precondition and report the violation by any means (call std::terminate, throw an exception, launch debugger).
+  \item Pick 1 or 2 based on other factors (like the value of macro NDEBUG).
+\end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Assert or throw?}
+\begin{center}
+The caller may assume nothing and cannot rely on current implementation. \\~\\
+\includegraphics[scale=0.4]{evil_genius}
+\end{center}
 \end{frame}
 
 
-
-
-\section{Some statistics} %maybe skip it?
-\subsection{Code bloat - numbers}
-\subsection{C++ - without, validations, contracts, generated}
-\subsection{Java}
 
 \section{Summary}
 \subsection{Pros}
 \begin{frame}
 \frametitle{Pros}
 \begin{itemize}
-  \item Reduced time spent in debugger
+  \item Eliminated redundant checks
   \item Less code
+  \item Lower cyclomatic complexity
+  \item Less time spent on adding new features
+  \item Many bugs are detected ASAP
+  \item Reduced time spent in debugger
   \item Safer code
+  \item Protection against user / callers
 \end{itemize}
-Before you call the functionality ready, think about contract - preconditions, postconditions and invariants
+Before you call the functionality ready, think about the contract - preconditions, postconditions and invariants. \\
+The contract protects you against bugs and users as well. They cannot blame you if they do not satisfy it.
 \end{frame}
 
-
-\subsection{End quote}
+\subsection{Cons}
 \begin{frame}
-\frametitle{End quote}
+\frametitle{Cons}
+\begin{itemize}
+  \item Lots of potential UB (nullptr, std::vector::operator[])
+  \item Not all bugs can be detected
+  \item Bugs in contracts (logical conditions)
+  \item No native support in popular languages (C++, Java)
+  \item Cannot evaluate conditions in compile time
+  \item Difficulty to introduce contracts to big projects
+  \item Performance penalty for checking contracts
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Cons}
 \begin{center}
-\Large \textit{Nothing astonishes men so much as common sense and plain dealing}
-\large \textbf{Ralph Waldo Emerson, Essays} \\~\\
-\includegraphics[scale=0.65]{emerson}
+You can try to disable contracts when development is finished and you know that client won't break anything. \\~\\
+\includegraphics[scale=0.35]{breaking_contract}
 \end{center}
 \end{frame}
+
 
 \subsection{Q \& A}
 \begin{frame}
@@ -460,9 +514,22 @@ Before you call the functionality ready, think about contract - preconditions, p
 \end{frame}
 
 
-\subsection{Bibliography}
+\subsection{Questions for audience}
+\begin{frame}
+\frametitle{Questions for audience}
+\begin{itemize}[<+->]
+  \item Who have heard about contract programming earlier?
+  \item Who have used contract programming before?
+  \item Who thinks that contract programming is useful and helpful?
+  \item Who will try it at home (or work)?
+  \item Who wants to hear more?
+\end{itemize}
+\end{frame}
+
+
+\subsection{Resources}
 \begin{frame}[shrink=15]
-\frametitle{Bibliography}
+\frametitle{Resources}
 \begin{thebibliography}{10}
 \beamertemplatebookbibitems
 \bibitem{ahunt1}
@@ -472,13 +539,11 @@ A. Hunt, D. Thomas
 \beamertemplatearticlebibitems
 \bibitem{akrzemi1}
 A. Krzemieński
-\newblock {Preconditions - part I}
-\newblock {\em https://akrzemi1.wordpress.com/2013/01/04/preconditions-part-i/}
-
-\bibitem{dstotts1}
-D. Stotts
-\newblock {Programming by Contract}
-\newblock {\em http://www.cs.unc.edu/~stotts/COMP204/contract.html}
+\newblock {Preconditions - part I, part II, part III, part IV}
+\newblock {\em{https://akrzemi1.wordpress.com/2013/01/04/preconditions-part-i/}}
+\newblock {\em https://akrzemi1.wordpress.com/2013/02/11/preconditions-part-ii/}
+\newblock {\em https://akrzemi1.wordpress.com/2013/03/13/preconditions-part-iii/}
+\newblock {\em https://akrzemi1.wordpress.com/2013/04/18/preconditions-part-iv/}
 
 \bibitem{dstotts1}
 L. Crowl, T. Ottosen
@@ -486,13 +551,35 @@ L. Crowl, T. Ottosen
 \newblock {\em http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n1962.html}
 
 \bibitem{dstotts1}
+D. Stotts
+\newblock {Programming by Contract}
+\newblock {\em http://www.cs.unc.edu/~stotts/COMP204/contract.html}
+
+\bibitem{dstotts1}
 O. Enseling
 \newblock {iContract: Design by Contract in Java}
 \newblock {\em http://www.javaworld.com/article/2074956/learn-java/icontract--design-by-contract-in-java.html}
 
+\bibitem{dstotts1}
+D. Brzeziński
+\newblock {Programowanie przez kontrakt}
+\newblock {\em http://www.cs.put.poznan.pl/dbrzezinski/teaching/po/7 - Programowanie przez kontrakt.pdf}
+
 \end{thebibliography}
 \end{frame}
 
-% http://www.cs.unc.edu/~stotts/COMP204/contract.html
+
+\subsection{Contract programming advanced}
+\begin{frame}
+\frametitle{Contract programming advanced}
+\begin{itemize}
+  \item Some examples of silly bugs
+  \item Analysis of precondition and postcondition code
+  \item Implementation of more professional DbC framework in C++
+  \item Comparison of performance between presented solutions
+  \item Code bloat - how messy the code can be - comparison
+\end{itemize}
+\end{frame}
+
 
 \end{document}

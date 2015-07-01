@@ -1,4 +1,9 @@
-#include "ownMechnism.hpp"
+#include "ownMechanism.hpp"
+
+bool SomeClass::checkInvariant()
+{
+    return false;
+}
 
 void SomeClass::someMethod(AnotherClass *fillMeWithData)
 {
@@ -8,4 +13,14 @@ void SomeClass::someMethod(AnotherClass *fillMeWithData)
 
     postCondition(fillMeWithData->hasData());
     postCondition(checkInvariant());
+}
+
+int main()
+{
+    AnotherClass* ac = new AnotherClass();
+
+    SomeClass sc = {};
+    sc.someMethod(ac);
+    
+    delete ac;
 }
