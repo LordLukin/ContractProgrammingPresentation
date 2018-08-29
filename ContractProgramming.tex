@@ -470,7 +470,7 @@ It allows the function author to do the following things:
 \begin{frame}[fragile]
 \frametitle{Assert or throw?}
 \begin{center}
-The caller may assume nothing and cannot rely on current implementation. \\~\\
+The caller may assume nothing and cannot rely on current implementation, if he does not satisfy preconditions. \\~\\
 \includegraphics[scale=0.4]{evil_genius}
 \end{center}
 \end{frame}
@@ -496,7 +496,7 @@ The caller may assume nothing and cannot rely on current implementation. \\~\\
   \item Protection against user / callers
 \end{itemize}
 Before you call the functionality ready, think about the contract - preconditions, postconditions and invariants. \\
-The contract protects you against bugs and users as well. They cannot blame you if they do not satisfy it.
+The contract protects you against bugs and users as well. Users cannot blame you if they do not satisfy the preconditions.
 \end{frame}
 
 \subsection{Cons}
@@ -506,9 +506,9 @@ The contract protects you against bugs and users as well. They cannot blame you 
   \item Lots of potential UB (nullptr, std::vector::operator[])
   \item Not all bugs can be detected
   \item Bugs in contracts (logical conditions)
+  \item Difficulty to introduce contracts to big projects
   \item No native support in popular languages (C++, Java)
   \item Cannot evaluate conditions in compile time
-  \item Difficulty to introduce contracts to big projects
   \item Performance penalty for checking contracts
 \end{itemize}
 \end{frame}
@@ -539,7 +539,6 @@ You can try to disable contracts when development is finished and you know that 
   \item Who have heard about contract programming earlier?
   \item Who have used contract programming before?
   \item Who thinks that contract programming is useful and helpful?
-  \item Who will try it at home (or work)?
   \item Who wants to hear more?
 \end{itemize}
 \end{frame}

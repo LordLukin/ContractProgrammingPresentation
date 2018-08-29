@@ -29,6 +29,6 @@ private:
 class SomeClass : public Base
 {
 private:
-    virtual void someMethodImpl(AnotherClass * ptrData)
+    void someMethodImpl(AnotherClass * ptrData) override
     { /* your code goes here... */ }
 };
